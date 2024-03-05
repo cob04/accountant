@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+import argparse
+import csv
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Iterable
+
+EXPENSE_RECORD_FILE = "expense_records_file.csv"
+
+
+@dataclass
+class ExpenseRecord:
+    category: str
+    recurrence: bool
+    amount: float
+    memo: str
+    payment_method: str
+    expense_date: str
+    timestamp: datetime
+
+    def to_dict(self):
+        return self.__dict__
+
+
+def requires_header(fieldnames: Iterable) -> bool:
+    with open(EXPENSE_RECORD_FILE, "rt") as f:
+        try:
+            first_line, *_ = f.readlines()
+            if set(fieldnames).intersection(first_line.split(",")):
+                return False
+        except ValueError:
+            return True
+
+
+def create_expense_record(expense_args: dict):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M")
+    expense = ExpenseRecord(timestamp=timestamp, **expense_args)
+    with open(EXPENSE_RECORD_FILE, "a") as f:
+        row_dict = expense.to_dict()
+        field_names = row_dict.keys()
+        f_csv = csv.DictWriter(f, fieldnames=field_names)
+        if requires_header(field_names):
+            f_csv.writeheader()
+        f_csv.writerow(row_dict)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--category",
+        required=True,
+        help="expense category",
+        choices=["food", "housing", "transportation", "investment", "saving", "utility", "msc"],
+    )
+    parser.add_argument(
+        "-r",
+        "--recurrence",
+        required=True,
+        help="how does expense recurr",
+        choices=["daily", "monthly", "quarterly", "annual", "once_off"],
+    )
+    parser.add_argument(
+        "-a", "--amount", required=True, help="expense amount", type=int
+    )
+    parser.add_argument(
+        "-m", "--memo", required=True, help="Note describing the expense, some context"
+    )
+    parser.add_argument(
+        "-p",
+        "--payment-method",
+        required=True,
+        help="Method used to pay",
+        choices=["cash", "card", "mobile"],
+    )
+    parser.add_argument(
+        "-d", "--expense-date", required=True, help="Date of the expense"
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = get_args()
+    expense_args = {
+        "category": args.category,
+        "recurrence": args.recurrence,
+        "amount": args.amount,
+        "memo": args.memo,
+        "payment_method": args.payment_method,
+        "expense_date": args.expense_date,
+    }
+    create_expense_record(expense_args)
+
+
+if __name__ == "__main__":
+    main()
