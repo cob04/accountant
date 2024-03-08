@@ -86,7 +86,7 @@ def main():
         "category": args.category,
         "recurrence": args.recurrence,
         "amount": args.amount,
-        "memo": args.memo,
+        "memo": f"'{args.memo}'",
         "payment_method": args.payment_method,
         "expense_date": args.expense_date,
     }
